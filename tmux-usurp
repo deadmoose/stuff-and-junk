@@ -1,0 +1,34 @@
+#!/bin/bash
+#
+# Usage: tmux-usurp
+#
+# Finds any other clients connected to the current session and gives them the boot.
+# They get transferred over to newly created sessions asking them to simply hit enter,
+# and once you do, they reconnect.
+#
+# This is useful for situations where, e.g. I normally have sessions open on my workstation,
+# then connect from my laptop with drastically different geometry. I can just 'tmux-usurp',
+# get things to look nice on my current machine, then when I get back to my desktop, just
+# smack enter to undo the damage.
+
+if [ -z "$TMUX" ]; then
+  echo Not running under tmux.
+  exit 1
+fi
+
+# Grab information about our session & current client.
+SESSION_ID=`tmux display-message -p '#{session_id}'`
+SESSION_NAME=`tmux display-message -p '#{session_name}'`
+CLIENT_TTY=`tmux display-message -p '#{client_tty}'`
+
+for client in $(tmux list-clients -t $SESSION_ID -F '#{client_tty}'); do
+  if [ "$client" != "$CLIENT_TTY" ]; then
+    # Create a new session to quick-reattach
+    new_session=`unset TMUX ; \
+      tmux new-session -dP -F '#{session_id}' \
+      "echo Hit enter to reattach to session \'$SESSION_NAME\'... ; \
+      read ; \
+      tmux switch-client -l"`
+    tmux switch-client -c "$client" -t "$new_session"
+  fi
+done
