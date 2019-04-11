@@ -25,7 +25,7 @@ for client in $(tmux list-clients -t $SESSION_ID -F '#{client_tty}'); do
   if [ "$client" != "$CLIENT_TTY" ]; then
     # Create a new session to quick-reattach
     new_session=`unset TMUX ; \
-      tmux new-session -dP -F '#{session_id}' \
+      tmux new-session -s "_usurped_${client}" -dP -F '#{session_id}' \
       "echo Hit enter to reattach to session \'$SESSION_NAME\'... ; \
       read ; \
       tmux switch-client -l"`
